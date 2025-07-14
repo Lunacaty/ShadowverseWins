@@ -2,6 +2,7 @@ package com.shadowverse;
 
 import com.shadowverse.utils.API;
 import com.shadowverse.utils.Response;
+import org.htmlunit.javascript.host.speech.SpeechSynthesisUtterance;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -9,13 +10,14 @@ import org.jsoup.select.Elements;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
-    private static final String[] MPS = {"A", "AA", "Master"};
+    private static final String[] MPS = {"B","A", "AA", "Master"};
     private static final String[] GROUPS = {"sapphire", "diamond"};
     //依次是:妖精,皇家,法师,龙族,主教,梦魇,超越
     private static final String[] LEADER_TYPES = {"E", "R", "W", "D", "B", "Nmr", "Nm"};
@@ -73,8 +75,23 @@ public class Main {
             System.out.println("结束时间不能早于起始时间");
             return;
         }
+        System.out.println("请输入查询段位(B,A,AA,Master.不同段位用空格分隔,不输入默认同时查询后三者(B会同时查询B以下))");
+        String[] ranks = scanner.nextLine().split(" ");
+        if(ranks.length == 0 || Objects.equals(ranks[0], "")){
+            ranks = MPS;
+        }
+        
         ExecutorService executor = Executors.newFixedThreadPool(16);
         for (String mp : MPS) {
+            boolean hasRank = false;
+            for(String rk : ranks){
+                if(Objects.equals(rk, mp)){
+                    hasRank = true;
+                }
+            }
+            if(!hasRank){
+                continue;
+            }
             for (String group : GROUPS) {
                 for (String leaderType : LEADER_TYPES) {
                     executor.submit(() -> {
@@ -200,9 +217,9 @@ public class Main {
         
         
         //估计系数,递减以模拟估计越来越保守
-        double base = 0.7;
+        double base = 0.5;
         System.out.println("首次估计起始页为:" + ((int)(diff * base) + 1));
-        //diff*base:首次估计,每一页的数据时间差为0.7天
+        //diff*base:首次估计,每一页的数据时间差为0.5天
         for (int i = (int)(diff * base) + 1; true; ) {
             
             if ((isPageLegal(mp, group, leader, i) || diff == 0) && (!isPageLegal(mp, group, leader, i - 1) || i == 1)) {
@@ -231,12 +248,13 @@ public class Main {
             }
             
             
-            if (base > 0.4) {
+            if (base > 0.3) {
                 Integer cal = calculateDelTime(i, group, mp, leader, 1);
                 System.out.println("第" + i + "页首条数据,与末尾时间差为:" + cal);
                 if (cal == null || (cal == 0 && i > 1)) {
                     i--;
                     System.out.println("尝试调整起始页为:" + i);
+                    base -= 0.05;
                     continue;
                 }
                 int temp = i;
@@ -245,7 +263,7 @@ public class Main {
                     i = temp;
                     i--;
                 }
-                base -= 0.1;
+                base -= 0.05;
                 System.out.println("尝试调整起始页为:" + i);
             } else {
                 //估计若干次后,不再优化,逐一递减/增

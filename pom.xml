@@ -135,7 +135,7 @@
                                 <argument>--main-class</argument>
                                 <argument>com.shadowverse.Main</argument>
                                 <argument>--dest</argument>
-                                <argument>E:\exec\shadowverse</argument>
+                                <argument>E:\exec\shadowverse1.1</argument>
                                 <argument>--verbose</argument>
                                 <argument>--win-console</argument>
                             </arguments>
