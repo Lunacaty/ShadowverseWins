@@ -401,20 +401,17 @@ public class Main {
     }
     
     public static boolean timeLegal(String[] time) {
-        boolean flag = true;
-        for (int i = 0; i < 3; i++) {
-            if (Integer.parseInt(time[i]) < Integer.parseInt(START_END[0][i])) {
-                flag = false;
-                break;
-            }
-            if (Integer.parseInt(time[i]) > Integer.parseInt(START_END[1][i])) {
-                flag = false;
-                break;
-            }
-            flag = true;
+        int diff1 = 0;
+        for (int j = 0; j < 3; j++) {
+            diff1 += (Integer.parseInt(START_END[1][j]) - Integer.parseInt(time[j])) * (j == 0 ? 365 : j == 1 ? 30 : 1);
+        }
+        int diff2 = 0;
+        for (int j = 0; j < 3; j++) {
+            diff2 += (Integer.parseInt(time[j]) - Integer.parseInt(START_END[0][j])) * (j == 0 ? 365 : j == 1 ? 30 : 1);
         }
         
-        return flag;
+        
+        return diff1 >= 0 && diff2 >= 0;
     }
     
     public static String[] proTime(String timestamp) {
