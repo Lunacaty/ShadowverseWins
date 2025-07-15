@@ -77,7 +77,7 @@ public class Main {
         }
         System.out.println("请输入查询段位(B,A,AA,Master.对于任何段位,都会同时查询其之后的段位(例如输入A会同时查询AA与Master段的数据,这与程序设计者无关,是网站本身的设计),不输入默认同时查询后三者)");
         String rank = scanner.nextLine();
-        rank = "A";
+        rank = rank.isEmpty() ? "A" : rank;
         
         ExecutorService executor = Executors.newFixedThreadPool(16);
         for (String mp : MPS) {
