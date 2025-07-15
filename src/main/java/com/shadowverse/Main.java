@@ -182,10 +182,13 @@ public class Main {
                 }
                 isEnd = false;
                 System.out.println("数据时间在指定范围内,有效");
-                RESULT.put(leader(leader), RESULT.get(leader(leader)) + 1);
                 if (group.equals("diamond")) {
                     RESULT_DIAMOND.put(leader(leader), RESULT_DIAMOND.get(leader(leader)) + 1);
+                    //蓝宝石组也会同时查询钻石组,故group为diamond时不必再在普通结果中计数
+                    continue;
                 }
+                RESULT.put(leader(leader), RESULT.get(leader(leader)) + 1);
+                
             }
             if (isEnd) {
                 System.out.println("爬取至末尾页");
