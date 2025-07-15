@@ -78,7 +78,7 @@ public class Main {
         System.out.println("请输入查询段位(B,A,AA,Master.不同段位用空格分隔,不输入默认同时查询后三者(B会同时查询B以下))");
         String[] ranks = scanner.nextLine().split(" ");
         if(ranks.length == 0 || Objects.equals(ranks[0], "")){
-            ranks = MPS;
+            ranks = new String[]{"A", "AA", "Master"};
         }
         
         ExecutorService executor = Executors.newFixedThreadPool(16);
