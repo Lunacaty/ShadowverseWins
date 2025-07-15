@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
-    private static final String[] MPS = {"B","A", "AA", "Master"};
+    private static final String[] MPS = {"B", "A", "AA", "Master"};
     private static final String[] GROUPS = {"sapphire", "diamond"};
     //依次是:妖精,皇家,法师,龙族,主教,梦魇,超越
     private static final String[] LEADER_TYPES = {"E", "R", "W", "D", "B", "Nmr", "Nm"};
@@ -75,21 +75,14 @@ public class Main {
             System.out.println("结束时间不能早于起始时间");
             return;
         }
-        System.out.println("请输入查询段位(B,A,AA,Master.不同段位用空格分隔,不输入默认同时查询后三者(B会同时查询B以下))");
-        String[] ranks = scanner.nextLine().split(" ");
-        if(ranks.length == 0 || Objects.equals(ranks[0], "")){
-            ranks = new String[]{"A", "AA", "Master"};
-        }
+        System.out.println("请输入查询段位(B,A,AA,Master.对于任何段位,都会同时查询其之后的段位(例如输入A会同时查询AA与Master段的数据,这与程序设计者无关,是网站本身的设计),不输入默认同时查询后三者)");
+        String rank = scanner.nextLine();
+        rank = "A";
         
         ExecutorService executor = Executors.newFixedThreadPool(16);
         for (String mp : MPS) {
-            boolean hasRank = false;
-            for(String rk : ranks){
-                if(Objects.equals(rk, mp)){
-                    hasRank = true;
-                }
-            }
-            if(!hasRank){
+            boolean hasRank = Objects.equals(rank, mp);
+            if (!hasRank) {
                 continue;
             }
             for (String group : GROUPS) {
@@ -132,7 +125,7 @@ public class Main {
         for (String key : RESULT_PERCENT.keySet()) {
             System.out.println(key + ":" + RESULT_PERCENT.get(key));
         }
-        System.out.println("钻石组数据,共"+totalDiamond+"条");
+        System.out.println("钻石组数据,共" + totalDiamond + "条");
         for (String key : RESULT_DIAMOND.keySet()) {
             System.out.println(key + ":" + RESULT_DIAMOND.get(key));
         }
@@ -154,7 +147,7 @@ public class Main {
         
         Response res;
         Document doc;
-        System.out.println("开始爬取" + leader(leader) + mp+" "+group + "组" + "数据");
+        System.out.println("开始爬取" + leader(leader) + mp + " " + group + "组" + "数据");
         for (int i = start; true; i++) {
             System.out.println("正在爬取第" + i + "页数据...");
             res = api.GET("/", "group=" + group, "leader=" + leader, "format=rotation", "mp=" + mp, "seasonId=61", "more=10", "page=" + i);
@@ -190,11 +183,11 @@ public class Main {
                 isEnd = false;
                 System.out.println("数据时间在指定范围内,有效");
                 RESULT.put(leader(leader), RESULT.get(leader(leader)) + 1);
-                if (group.equals("diamond")){
+                if (group.equals("diamond")) {
                     RESULT_DIAMOND.put(leader(leader), RESULT_DIAMOND.get(leader(leader)) + 1);
                 }
             }
-            if(isEnd){
+            if (isEnd) {
                 System.out.println("爬取至末尾页");
                 break;
             }
@@ -218,27 +211,27 @@ public class Main {
         
         //估计系数,递减以模拟估计越来越保守
         double base = 0.5;
-        System.out.println("首次估计起始页为:" + ((int)(diff * base) + 1));
+        System.out.println("首次估计起始页为:" + ((int) (diff * base) + 1));
         //diff*base:首次估计,每一页的数据时间差为0.5天
-        for (int i = (int)(diff * base) + 1; true; ) {
+        for (int i = (int) (diff * base) + 1; true; ) {
             
             if ((isPageLegal(mp, group, leader, i) || diff == 0) && (!isPageLegal(mp, group, leader, i - 1) || i == 1)) {
                 start = i;
                 System.out.println("起始页为:" + start);
             }
-
-            if(
-                    !isPageLegal(mp, group, leader, i)&&
+            
+            if (
+                    !isPageLegal(mp, group, leader, i) &&
                             calculateDelTime(i, group, mp, leader, 1) != null &&
                             calculateDelTime(i, group, mp, leader, 1) > 0 &&
-                            (calculateDelTime(i+1, group, mp, leader, 1) == null
-                            || (
-                                    calculateDelTime(i+1, group, mp, leader, 1) != null
-                                    && calculateDelTime(i+1, group, mp, leader, 1) < 0
-                                    && !isPageLegal(mp, group, leader, i+1)
-                                    )
+                            (calculateDelTime(i + 1, group, mp, leader, 1) == null
+                                    || (
+                                    calculateDelTime(i + 1, group, mp, leader, 1) != null
+                                            && calculateDelTime(i + 1, group, mp, leader, 1) < 0
+                                            && !isPageLegal(mp, group, leader, i + 1)
                             )
-            ){
+                            )
+            ) {
                 System.out.println("无数据");
                 return null;
             }
