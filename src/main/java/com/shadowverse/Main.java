@@ -17,8 +17,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
+    private static final String[] MORE = {"5", "10"};
     private static final String[] MPS = {"B", "A", "AA", "Master"};
-    private static final String[] GROUPS = {"sapphire", "diamond"};
+    private static final String[] GROUPS = {"ruby", "sapphire", "diamond"};
     //依次是:妖精,皇家,法师,龙族,主教,梦魇,超越
     private static final String[] LEADER_TYPES = {"E", "R", "W", "D", "B", "Nmr", "Nm"};
     private static final Map<String, Integer> RESULT = new HashMap<>();
@@ -61,44 +62,80 @@ public class Main {
     
     public static void main(String[] args) {
         Main main = new Main();
-        System.out.println("请输入起始时间,格式为yyyy/MM/dd");
         Scanner scanner = new Scanner(System.in);
-        START_END[0] = proTime(scanner.nextLine());
-        System.out.println("请输入结束时间,格式为yyyy/MM/dd");
-        START_END[1] = proTime(scanner.nextLine());
         
-        int diff = 0;
-        for (int i = 0; i < 3; i++) {
-            diff += (Integer.parseInt(START_END[1][i]) - Integer.parseInt(START_END[0][i])) * (i == 0 ? 365 : i == 1 ? 30 : 1);
-        }
-        if (diff < 0) {
-            System.out.println("结束时间不能早于起始时间");
-            return;
-        }
-        System.out.println("请输入查询段位(B,A,AA,Master.对于任何段位,都会同时查询其之后的段位(例如输入A会同时查询AA与Master段的数据,这与程序设计者无关,是网站本身的设计),不输入默认同时查询后三者)");
-        String rank = scanner.nextLine();
-        rank = rank.isEmpty() ? "A" : rank;
-        
-        ExecutorService executor = Executors.newFixedThreadPool(16);
-        for (String mp : MPS) {
-            boolean hasRank = Objects.equals(rank, mp);
-            if (!hasRank) {
+        while (true) {
+            System.out.println("请输入起始时间,格式为yyyy/MM/dd");
+            START_END[0] = proTime(scanner.nextLine());
+            System.out.println("请输入结束时间,格式为yyyy/MM/dd");
+            START_END[1] = proTime(scanner.nextLine());
+            
+            if(START_END[0] == null || START_END[1] == null){
+                System.out.println("输入的时间格式不正确,请重新输入");
                 continue;
             }
-            for (String group : GROUPS) {
-                for (String leaderType : LEADER_TYPES) {
-                    executor.submit(() -> {
-                        System.out.println("爬取" + leader(leaderType) + " " + mp + " " + group + "组" + "开始");
-                        try {
-                            main.get(group, mp, leaderType, accumulatePage(group, mp, leaderType));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        System.out.println("爬取" + leader(leaderType) + " " + mp + " " + group + "组" + "结束");
-                    });
-                }
+            
+            int diff = 0;
+            for (int i = 0; i < 3; i++) {
+                diff += (Integer.parseInt(START_END[1][i]) - Integer.parseInt(START_END[0][i])) * (i == 0 ? 365 : i == 1 ? 30 : 1);
             }
+            if (diff < 0) {
+                System.out.println("结束时间不能早于起始时间");
+                continue;
+            }
+            System.out.println("查询时间范围:" + START_END[0][0] + "年" + START_END[0][1] + "月" + START_END[0][2] + "日至" + START_END[1][0] + "年" + START_END[1][1] + "月" + START_END[1][2] + "日");
+            break;
         }
+        
+        String finalMp;
+        String finalGroup;
+        String finalMore = "";
+        String finalSeasonId = "";
+        while (true) {
+            System.out.println("请输入查询段位(B,A,AA,Master.对于任何段位,都会同时查询其之后的段位(例如输入A会同时查询AA与Master段的数据,这与程序设计者无关,是网站本身的设计),不输入默认同时查询后三者)");
+            String mp = scanner.nextLine();
+            mp = mp.isEmpty() ? "A" : mp;
+            System.out.println("请输入查询分组(topaz(黄宝石),,ruby(红宝石),sapphire(蓝宝石),diamond(钻石).对于任何分组,都会同时查询其之后的分组(例如输入ruby会同时查询sapphire与diamond组的数据,这与程序设计者无关,是网站本身的设计),不输入默认同时查询后二者)");
+            String group = scanner.nextLine();
+            group = group.isEmpty() ? "sapphire" : group;
+            System.out.println("请输入查询连胜数(5,10.对于任何连胜数,后面忘了总之不是我的锅,不输入默认查询10连胜以上)");
+            String more = scanner.nextLine();
+            more = more.isEmpty() ? "5" : more;
+            System.out.println("请输入查询卡包ID,传说揭幕包为61,无限进化为62,以此类推,不输入就画个圈圈诅咒你");
+            String seasonId = scanner.nextLine();
+            if (!hasItem(MPS, mp) || !hasItem(GROUPS, group) || !hasItem(MORE, more) || seasonId.isEmpty()) {
+                System.out.println("输入的段位/分组/连胜数不存在或未指定卡包ID,请重新输入");
+                continue;
+            }
+            finalMp = mp;
+            finalGroup = group;
+            System.out.println("确认查询条件:" + finalMp + "段|" + finalGroup + "组|" + "连胜数:" + more + "|卡包ID:" + seasonId);
+            break;
+        }
+        
+        ExecutorService executor = Executors.newFixedThreadPool(16);
+        
+        
+        
+        
+        for (String leaderType : LEADER_TYPES) {
+            executor.submit(() -> {
+                System.out.println("爬取" + leader(leaderType) + " " + finalMp + " " + finalGroup + "组" + "开始");
+                try {
+                    //我该把这一大串参数都放到static变量里的
+                    main.get(finalGroup, finalMp, leaderType, accumulatePage(finalGroup, finalMp, leaderType,finalMore,finalSeasonId),finalMore,finalSeasonId);
+                    if (!"diamond".equals(finalGroup)) {
+                        System.out.println("准备查询钻石组数据");
+                        main.get("diamond", finalMp, leaderType, accumulatePage("diamond", finalMp, leaderType, finalMore, finalSeasonId), finalMore, finalSeasonId);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                System.out.println("爬取" + leader(leaderType) + " " + finalMp + " " + finalGroup + "组" + "结束");
+            });
+        }
+        
+        
         executor.shutdown();
         try {
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -108,22 +145,28 @@ public class Main {
         
         int total = 0;
         int totalDiamond = 0;
-        for (String key : RESULT.keySet()) {
-            total += RESULT.get(key);
+        
+        
+        System.out.println(START_END[0][0] + "年" + START_END[0][1] + "月" + START_END[0][2] + "日至" + START_END[1][0] + "年" + START_END[1][1] + "月" + START_END[1][2] + "日");
+        
+        
+        if (!finalGroup.equals("diamond")){
+            for (String key : RESULT.keySet()) {
+                total += RESULT.get(key);
+            }
+            System.out.println("总计:" + total + "条数据");
+            for (String key : RESULT.keySet()) {
+                System.out.println(key + ":" + RESULT.get(key));
+            }
+            for (String key : RESULT.keySet()) {
+                RESULT_PERCENT.put(key, RESULT.get(key).doubleValue() / total);
+            }
+            for (String key : RESULT_PERCENT.keySet()) {
+                System.out.println(key + ":" + RESULT_PERCENT.get(key));
+            }
         }
         for (String key : RESULT_DIAMOND.keySet()) {
             totalDiamond += RESULT_DIAMOND.get(key);
-        }
-        System.out.println(START_END[0][0] + "年" + START_END[0][1] + "月" + START_END[0][2] + "日至" + START_END[1][0] + "年" + START_END[1][1] + "月" + START_END[1][2] + "日");
-        System.out.println("总计:" + total + "条数据");
-        for (String key : RESULT.keySet()) {
-            System.out.println(key + ":" + RESULT.get(key));
-        }
-        for (String key : RESULT.keySet()) {
-            RESULT_PERCENT.put(key, RESULT.get(key).doubleValue() / total);
-        }
-        for (String key : RESULT_PERCENT.keySet()) {
-            System.out.println(key + ":" + RESULT_PERCENT.get(key));
         }
         System.out.println("钻石组数据,共" + totalDiamond + "条");
         for (String key : RESULT_DIAMOND.keySet()) {
@@ -140,7 +183,7 @@ public class Main {
         scanner.close();
     }
     
-    public void get(String group, String mp, String leader, Integer start) {
+    public void get(String group, String mp, String leader, Integer start,String more,String seasonId) {
         if (start == null) {
             return;
         }
@@ -150,7 +193,7 @@ public class Main {
         System.out.println("开始爬取" + leader(leader) + mp + " " + group + "组" + "数据");
         for (int i = start; true; i++) {
             System.out.println("正在爬取第" + i + "页数据...");
-            res = api.GET("/", "group=" + group, "leader=" + leader, "format=rotation", "mp=" + mp, "seasonId=61", "more=10", "page=" + i);
+            res = api.GET("/", "group=" + group, "leader=" + leader, "format=rotation", "mp=" + mp, "seasonId=" + seasonId, "more=" + more, "page=" + i);
             doc = Jsoup.parse(res.getData().toString());
             Elements sections = doc.select("section");
             if (sections.isEmpty()) {
@@ -198,11 +241,11 @@ public class Main {
         
     }
     
-    public static Integer accumulatePage(String group, String mp, String leader) {
+    public static Integer accumulatePage(String group, String mp, String leader, String more, String seasonId) {
         System.out.println("正在估计起始页数...");
         int start = 0;
         int end = 0;
-        Integer diff = calculateDelTime(1, group, mp, leader, 1);
+        Integer diff = calculateDelTime(1, group, mp, leader, 1, more, seasonId);
         if (diff == null) {
             System.out.println("无数据");
             return null;
@@ -218,20 +261,20 @@ public class Main {
         //diff*base:首次估计,每一页的数据时间差为0.5天
         for (int i = (int) (diff * base) + 1; true; ) {
             
-            if ((isPageLegal(mp, group, leader, i) || diff == 0) && (!isPageLegal(mp, group, leader, i - 1) || i == 1)) {
+            if ((isPageLegal(mp, group, leader, i, more, seasonId) || diff == 0) && (!isPageLegal(mp, group, leader, i - 1,more,seasonId) || i == 1)) {
                 start = i;
                 System.out.println("起始页为:" + start);
             }
             
             if (
-                    !isPageLegal(mp, group, leader, i) &&
-                            calculateDelTime(i, group, mp, leader, 1) != null &&
-                            calculateDelTime(i, group, mp, leader, 1) > 0 &&
-                            (calculateDelTime(i + 1, group, mp, leader, 1) == null
+                    !isPageLegal(mp, group, leader, i, more, seasonId) &&
+                            calculateDelTime(i, group, mp, leader, 1, more,seasonId) != null &&
+                            calculateDelTime(i, group, mp, leader, 1, more,seasonId) > 0 &&
+                            (calculateDelTime(i + 1, group, mp, leader, 1, more,seasonId) == null
                                     || (
-                                    calculateDelTime(i + 1, group, mp, leader, 1) != null
-                                            && calculateDelTime(i + 1, group, mp, leader, 1) < 0
-                                            && !isPageLegal(mp, group, leader, i + 1)
+                                    calculateDelTime(i + 1, group, mp, leader, 1, more,seasonId) != null
+                                            && calculateDelTime(i + 1, group, mp, leader, 1, more,seasonId) < 0
+                                            && !isPageLegal(mp, group, leader, i + 1,more,seasonId)
                             )
                             )
             ) {
@@ -245,7 +288,7 @@ public class Main {
             
             
             if (base > 0.3) {
-                Integer cal = calculateDelTime(i, group, mp, leader, 1);
+                Integer cal = calculateDelTime(i, group, mp, leader, 1, more,seasonId);
                 System.out.println("第" + i + "页首条数据,与末尾时间差为:" + cal);
                 if (cal == null || (cal == 0 && i > 1)) {
                     i--;
@@ -264,7 +307,7 @@ public class Main {
             } else {
                 //估计若干次后,不再优化,逐一递减/增
                 System.out.println("估算次数达最大值,尝试逐一递减/增");
-                Integer cal = calculateDelTime(i, group, mp, leader, 1);
+                Integer cal = calculateDelTime(i, group, mp, leader, 1, more,seasonId);
                 System.out.println("第" + i + "页首条数据,与末尾时间差为:" + cal);
                 if (cal == null) {
                     i--;
@@ -330,8 +373,8 @@ public class Main {
         return start;
     }
     
-    public static Integer calculateDelTime(int page, String group, String mp, String leader, int mode) {
-        Response res = api.GET("/", "group=" + group, "leader=" + leader, "format=rotation", "mp=" + mp, "seasonId=61", "more=10", "page=" + page);
+    public static Integer calculateDelTime(int page, String group, String mp, String leader,int mode,String more, String seasonId) {
+        Response res = api.GET("/", "group=" + group, "leader=" + leader, "format=rotation", "mp=" + mp, "seasonId=" + seasonId, "more=" + more, "page=" + page);
         Document doc = Jsoup.parse(res.getData().toString());
         Elements sections = doc.select("section");
         if (sections.isEmpty()) {
@@ -364,8 +407,8 @@ public class Main {
         return null;
     }
     
-    public static boolean isPageLegal(String mp, String group, String leader, int page) {
-        Response res = api.GET("/", "group=" + group, "leader=" + leader, "format=rotation", "mp=" + mp, "seasonId=61", "more=10", "page=" + page);
+    public static boolean isPageLegal(String mp, String group, String leader, int page,String more, String seasonId) {
+        Response res = api.GET("/", "group=" + group, "leader=" + leader, "format=rotation", "mp=" + mp, "seasonId=" + seasonId, "more=" + more, "page=" + page);
         Document doc = Jsoup.parse(res.getData().toString());
         Elements sections = doc.select("section");
         if (sections.isEmpty()) {
@@ -412,10 +455,12 @@ public class Main {
     
     public static String[] proTime(String timestamp) {
         if (timestamp == null || timestamp.isEmpty()) {
-            throw new IllegalArgumentException("时间为空");
+            System.out.println("时间为空");
+            return null;
         }
         if (!timestamp.matches("\\d{4}/\\d{2}/\\d{2}")) {
-            throw new IllegalArgumentException("时间格式不正确");
+            System.out.println("时间格式错误");
+            return null;
         }
         return timestamp.split("/");
     }
@@ -431,5 +476,14 @@ public class Main {
             case "Nm" -> "超越";
             default -> "";
         };
+    }
+    
+    public static boolean hasItem(String[] arr, String item) {
+        for (String s : arr) {
+            if (s.equals(item)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
