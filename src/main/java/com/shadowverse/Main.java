@@ -26,7 +26,6 @@ public class Main {
     private static final Map<String, Double> RESULT_DIAMOND_PERCENT = new HashMap<>();
     private static final API api = new API("https://shadowverse-wins.com");
     private static final String[][] START_END = {{null, null, null}, {null, null, null}};
-    private static String[] SEASON_END = null;
     
     static {
         RESULT.put("妖精", 0);
@@ -102,8 +101,6 @@ public class Main {
             more = more.isEmpty() ? "5" : more;
             System.out.println("请输入查询卡包ID,传说揭幕包为61,无限进化为62,以此类推,不输入就画个圈圈诅咒你");
             String seasonId = scanner.nextLine();
-            System.out.println("若查询卡包非最新包,请输入卡包结束时间,否则直接回车");
-            SEASON_END = proTime(scanner.nextLine());
             if (!hasItem(MPS, mp) || !hasItem(GROUPS, group) || !hasItem(MORE, more) || seasonId.isEmpty()) {
                 System.out.println("输入的段位/分组/连胜数不存在或未指定卡包ID,请重新输入");
                 continue;
@@ -403,11 +400,7 @@ public class Main {
             }
             Integer diff = 0;
             for (int j = 0; j < 3; j++) {
-                //if(mode == 0 || SEASON_END == null) {
-                    diff += (Integer.parseInt(time[j]) - Integer.parseInt(START_END[mode][j])) * (j == 0 ? 365 : j == 1 ? 30 : 1);
-                //} else {
-                //    diff += (Integer.parseInt(time[j]) - Integer.parseInt(SEASON_END[j])) * (j == 0 ? 365 : j == 1 ? 30 : 1);
-//              //}
+                diff += (Integer.parseInt(time[j]) - Integer.parseInt(START_END[mode][j])) * (j == 0 ? 365 : j == 1 ? 30 : 1);
             }
             
             return diff;
