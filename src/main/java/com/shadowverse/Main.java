@@ -2,7 +2,6 @@ package com.shadowverse;
 
 import com.shadowverse.utils.API;
 import com.shadowverse.utils.Response;
-import org.htmlunit.javascript.host.speech.SpeechSynthesisUtterance;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -10,7 +9,6 @@ import org.jsoup.select.Elements;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,6 +26,7 @@ public class Main {
     private static final Map<String, Double> RESULT_DIAMOND_PERCENT = new HashMap<>();
     private static final API api = new API("https://shadowverse-wins.com");
     private static final String[][] START_END = {{null, null, null}, {null, null, null}};
+    private static String[] SEASON_END = null;
     
     static {
         RESULT.put("妖精", 0);
@@ -89,8 +88,8 @@ public class Main {
         
         String finalMp;
         String finalGroup;
-        String finalMore = "";
-        String finalSeasonId = "";
+        String finalMore;
+        String finalSeasonId;
         while (true) {
             System.out.println("请输入查询段位(B,A,AA,Master.对于任何段位,都会同时查询其之后的段位(例如输入A会同时查询AA与Master段的数据,这与程序设计者无关,是网站本身的设计),不输入默认同时查询后三者)");
             String mp = scanner.nextLine();
@@ -103,12 +102,16 @@ public class Main {
             more = more.isEmpty() ? "5" : more;
             System.out.println("请输入查询卡包ID,传说揭幕包为61,无限进化为62,以此类推,不输入就画个圈圈诅咒你");
             String seasonId = scanner.nextLine();
+            System.out.println("若查询卡包非最新包,请输入卡包结束时间,否则直接回车");
+            SEASON_END = proTime(scanner.nextLine());
             if (!hasItem(MPS, mp) || !hasItem(GROUPS, group) || !hasItem(MORE, more) || seasonId.isEmpty()) {
                 System.out.println("输入的段位/分组/连胜数不存在或未指定卡包ID,请重新输入");
                 continue;
             }
             finalMp = mp;
             finalGroup = group;
+            finalMore = more;
+            finalSeasonId = seasonId;
             System.out.println("确认查询条件:" + finalMp + "段|" + finalGroup + "组|" + "连胜数:" + more + "|卡包ID:" + seasonId);
             break;
         }
@@ -123,10 +126,10 @@ public class Main {
                 System.out.println("爬取" + leader(leaderType) + " " + finalMp + " " + finalGroup + "组" + "开始");
                 try {
                     //我该把这一大串参数都放到static变量里的
-                    main.get(finalGroup, finalMp, leaderType, accumulatePage(finalGroup, finalMp, leaderType,finalMore,finalSeasonId),finalMore,finalSeasonId);
+                    main.get(finalGroup, finalMp, leaderType, estimatePage(finalGroup, finalMp, leaderType,finalMore,finalSeasonId),finalMore,finalSeasonId);
                     if (!"diamond".equals(finalGroup)) {
                         System.out.println("准备查询钻石组数据");
-                        main.get("diamond", finalMp, leaderType, accumulatePage("diamond", finalMp, leaderType, finalMore, finalSeasonId), finalMore, finalSeasonId);
+                        main.get("diamond", finalMp, leaderType, estimatePage("diamond", finalMp, leaderType, finalMore, finalSeasonId), finalMore, finalSeasonId);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -241,7 +244,7 @@ public class Main {
         
     }
     
-    public static Integer accumulatePage(String group, String mp, String leader, String more, String seasonId) {
+    public static Integer estimatePage(String group, String mp, String leader, String more, String seasonId) {
         System.out.println("正在估计起始页数...");
         int start = 0;
         int end = 0;
@@ -400,8 +403,13 @@ public class Main {
             }
             Integer diff = 0;
             for (int j = 0; j < 3; j++) {
-                diff += (Integer.parseInt(time[j]) - Integer.parseInt(START_END[mode][j])) * (j == 0 ? 365 : j == 1 ? 30 : 1);
+                //if(mode == 0 || SEASON_END == null) {
+                    diff += (Integer.parseInt(time[j]) - Integer.parseInt(START_END[mode][j])) * (j == 0 ? 365 : j == 1 ? 30 : 1);
+                //} else {
+                //    diff += (Integer.parseInt(time[j]) - Integer.parseInt(SEASON_END[j])) * (j == 0 ? 365 : j == 1 ? 30 : 1);
+//              //}
             }
+            
             return diff;
         }
         return null;
