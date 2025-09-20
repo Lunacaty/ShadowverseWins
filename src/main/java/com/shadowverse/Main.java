@@ -37,6 +37,8 @@ public class Main {
     private final Map<String, Integer> resultDiamond = new HashMap<>();
     private final Map<String, Double> resultDiamondPercent = new HashMap<>();
     
+    private boolean isSave = false;
+    
     private static Scanner scanner = new Scanner(System.in);
     
     public static void main(String[] args) {
@@ -119,6 +121,11 @@ public class Main {
             }
             System.out.println("确认查询条件:" + mp + "段|" + group + "组|" + "连胜数:" + more + "|卡包ID:" + seasonId);
             break;
+        }
+        System.out.println("是否保存卡组图片到本地?(留空则不保存,输入任意字符则保存,请提前设置环境变量,代理端口设为7897)");
+        isSave = !scanner.nextLine().isEmpty();
+        if(isSave){
+            api.setProxy();
         }
     }
     
@@ -230,6 +237,20 @@ public class Main {
                 }
                 isEnd = false;
                 System.out.println("数据时间在指定范围内,有效");
+                
+                if(isSave){
+                    Element img = section.select(".image").first()
+                            .select("img").last();
+                    String url = img.attr("src");
+                    String output = System.getenv("SV_OUTPUT_PATH");
+                    boolean success = api.downloadImage(url, output);
+                    if(success){
+                        System.out.println("图片保存成功");
+                    }else{
+                        System.out.println("图片保存失败");
+                    }
+                }
+                
                 if (group.equals("diamond") && !"GrandMaster".equals(mp)) {
                     resultDiamond.put(leader(leader), resultDiamond.get(leader(leader)) + 1);
                     //若是钻石组,只统计钻石组结果即可
